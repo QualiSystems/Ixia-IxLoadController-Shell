@@ -8,13 +8,14 @@ from distutils.dir_util import copy_tree
 from collections import OrderedDict
 
 from cloudshell.traffic.handler import TrafficHandler
-import cloudshell.traffic.tg_helper as tg_helper
+from cloudshell.traffic.tg_helper import (get_reservation_resources, get_address, is_blocking, attach_stats_csv,
+                                          get_family_attribute)
 
-from ixload.ixl_app import IxlApp
-from ixload.api.ixl_tcl import IxlTclWrapper
+from ixload.ixl_app import init_ixl
 from ixload.ixl_statistics_view import IxlStatView
 
 from cloudshell.shell.core.session.cloudshell_session import CloudShellSessionContext
+from trafficgenerator.tgn_utils import ApiType
 
 
 class IxlHandler(TrafficHandler):
@@ -22,29 +23,32 @@ class IxlHandler(TrafficHandler):
     def initialize(self, context, logger):
 
         self.logger = logger
+        self.ixl = init_ixl(ApiType.rest, self.logger)
 
-        client_install_path = context.resource.attributes['Client Install Path'].replace('\\', '/')
-        if sys.platform == 'win32':
-            self._windows_tcl_env(client_install_path)
-
-        api_wrapper = IxlTclWrapper(self.logger, client_install_path)
-        self.ixl = IxlApp(self.logger, api_wrapper)
-
+        version = context.resource.attributes['Client Install Path']
+        self.logger.info('version from attribute = ' + version)
         address = context.resource.attributes['Controller Address']
+        self.logger.info('address from attribute = ' + address)
         if not address:
             address = 'localhost'
-        self.logger.info('connecting to address {}'.format(address))
-        self.ixl.connect(ip=address)
+        self.logger.info('final address = ' + address)
+        port = context.resource.attributes['Controller TCP Port']
+        self.logger.info('port from attribute = ' + port)
+        if not port:
+            port = '8080'
+        self.logger.info('final port = ' + port)
+
+        self.logger.info('connecting to server {}:{}'.format(address, port))
+        self.ixl.connect(version=version, ip=address, port=port)
         if sys.platform == 'win32':
             log_file_name = self.logger.handlers[0].baseFilename
             self.server_results_dir = (os.path.splitext(log_file_name)[0] + '--Results').replace('\\', '/')
             self.client_results_dir = self.server_results_dir
         else:
-            self.server_results_dir = 'c:/IxLoadResults'
+            self.server_results_dir = 'c:/temp/IxLoadResults'
             self.client_results_dir = '/IxLoadResults'
         logger.info('results directory = ' + self.server_results_dir)
         self.ixl.controller.set_results_dir(self.server_results_dir)
-        self.logger.info("Port Reservation Completed")
 
     def tearDown(self):
         self.ixl.disconnect()
@@ -59,15 +63,18 @@ class IxlHandler(TrafficHandler):
         my_api = CloudShellSessionContext(context).get_api()
 
         reservation_ports = {}
-        for port in tg_helper.get_reservation_ports(my_api, reservation_id):
-            reservation_ports[my_api.GetAttributeValue(port.Name, 'Logical Name').Value.strip()] = port
+        for port in get_reservation_resources(my_api, context.reservation.reservation_id,
+                                              'Generic Traffic Generator Port',
+                                              'PerfectStorm Chassis Shell 2G.GenericTrafficGeneratorPort',
+                                              'Ixia Chassis Shell 2G.GenericTrafficGeneratorPort'):
+            reservation_ports[get_family_attribute(my_api, port, 'Logical Name').Value.strip()] = port
 
-        perfectstorms = [ps.FullAddress for ps in tg_helper.get_reservation_ports(my_api, reservation_id,
-                                                                                  'PerfectStorm Chassis')]
+        perfectstorms = [ps.FullAddress for ps in get_reservation_resources(my_api, reservation_id,
+                                                                            'PerfectStorm Chassis Shell 2G')]
 
         for name, element in config_elements.items():
             if name in reservation_ports:
-                address = tg_helper.get_address(reservation_ports[name])
+                address = get_address(reservation_ports[name])
                 ip_address, module, port = address.split('/')
                 if ip_address in perfectstorms:
                     address = '{}/{}/{}'.format(ip_address, module, int(port) + 1)
@@ -82,7 +89,7 @@ class IxlHandler(TrafficHandler):
         self.logger.info("Port Reservation Completed")
 
     def start_test(self, blocking):
-        self.ixl.start_test(tg_helper.is_blocking(blocking))
+        self.ixl.start_test(is_blocking(blocking))
 
     def stop_test(self):
         self.ixl.stop_test()
@@ -101,7 +108,7 @@ class IxlHandler(TrafficHandler):
             w.writeheader()
             for time_stamp in statistics:
                 w.writerow(OrderedDict({'Timestamp': time_stamp}.items() + statistics[time_stamp].items()))
-            tg_helper.attach_stats_csv(context, self.logger, view_name, output.getvalue().strip())
+            attach_stats_csv(context, self.logger, view_name, output.getvalue().strip())
             return output.getvalue().strip()
         else:
             raise Exception('Output type should be CSV/JSON - got "{}"'.format(output_type))
