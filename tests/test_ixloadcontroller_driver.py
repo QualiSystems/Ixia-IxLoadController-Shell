@@ -14,10 +14,10 @@ from driver import IxLoadControllerDriver
 
 controller = '192.168.15.23'
 port = '8080'
-client_install_path = '8.01.106.3'
-client_install_path = '8.40.0.277'
+version = '8.01.106.3'
+version = '8.40.0.277'
 
-attributes = {'Client Install Path': client_install_path,
+attributes = {'Controller Version': version,
               'Controller Address': controller,
               'Controller TCP Port': port}
 

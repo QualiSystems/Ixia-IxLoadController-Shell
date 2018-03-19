@@ -25,20 +25,15 @@ class IxlHandler(TrafficHandler):
         self.logger = logger
         self.ixl = init_ixl(ApiType.rest, self.logger)
 
-        version = context.resource.attributes['Client Install Path']
-        self.logger.info('version from attribute = ' + version)
+        version = context.resource.attributes['Controller Version']
         address = context.resource.attributes['Controller Address']
-        self.logger.info('address from attribute = ' + address)
         if not address:
             address = 'localhost'
-        self.logger.info('final address = ' + address)
         port = context.resource.attributes['Controller TCP Port']
-        self.logger.info('port from attribute = ' + port)
         if not port:
             port = '8080'
-        self.logger.info('final port = ' + port)
 
-        self.logger.info('connecting to server {}:{}'.format(address, port))
+        self.logger.info('connecting to server {}:{} version {}'.format(address, port, version))
         self.ixl.connect(version=version, ip=address, port=port)
         if sys.platform == 'win32':
             log_file_name = self.logger.handlers[0].baseFilename

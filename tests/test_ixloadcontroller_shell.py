@@ -13,10 +13,10 @@ from shellfoundry.releasetools.test_helper import (create_session_from_cloudshel
 
 controller = '192.168.15.23'
 port = '8080'
-client_install_path = '8.01.106.3'
-client_install_path = '8.40.0.277'
+version = '8.01.106.3'
+version = '8.40.0.277'
 
-attributes = [AttributeNameValue('Client Install Path', client_install_path),
+attributes = [AttributeNameValue('Controller Version', version),
               AttributeNameValue('Controller Address', controller),
               AttributeNameValue('Controller TCP Port', port)]
 
