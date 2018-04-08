@@ -15,7 +15,6 @@ from ixload.ixl_app import init_ixl
 from ixload.ixl_statistics_view import IxlStatView
 
 from cloudshell.shell.core.session.cloudshell_session import CloudShellSessionContext
-from trafficgenerator.tgn_utils import ApiType
 
 
 class IxlHandler(TrafficHandler):
@@ -23,7 +22,7 @@ class IxlHandler(TrafficHandler):
     def initialize(self, context, logger):
 
         self.logger = logger
-        self.ixl = init_ixl(ApiType.rest, self.logger)
+        self.ixl = init_ixl(self.logger)
 
         version = context.resource.attributes['Controller Version']
         address = context.resource.attributes['Controller Address']

@@ -51,7 +51,7 @@ class TestIxLoadControllerDriver(unittest.TestCase):
                                                       'Ixia Chassis Shell 2G.GenericTrafficGeneratorPort')
         set_family_attribute(self.session, reservation_ports[0], 'Logical Name', 'Traffic1@Network1')
         set_family_attribute(self.session, reservation_ports[1], 'Logical Name', 'Traffic2@Network2')
-        self.driver.load_config(self.context, 'E:/workspace/python/PyIxLoad/ixload/test/configs/test_config.rxf')
+        self.driver.load_config(self.context, 'E:/workspace/python/PyIxLoad/ixload/test/configs/test_config_840.rxf')
 
     def test_run_traffic(self):
         self.test_load_config()
