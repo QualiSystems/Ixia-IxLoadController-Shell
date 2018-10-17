@@ -107,6 +107,18 @@ class IxlHandler(TrafficHandler):
         else:
             raise Exception('Output type should be CSV/JSON - got "{}"'.format(output_type))
 
+    def get_session_id(self):
+        return self.ixl.api.session_url
+
+    def get_children(self, obj_ref, child_type):
+        return self.ixl.api.getList(obj_ref, child_type)
+
+    def get_attributes(self, obj_ref):
+        return self.ixl.api.getAttributes(obj_ref)
+
+    def set_attribute(self, obj_ref, attr_name, attr_value):
+        return self.ixl.api.setAttributes(obj_ref, **{attr_name: attr_value})
+
     #
     # Private auxiliary methods.
     #
